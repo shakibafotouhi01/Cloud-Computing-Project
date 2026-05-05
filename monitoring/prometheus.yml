@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'minio-cluster'
+    metrics_path: /minio/v2/metrics/cluster
+    scheme: http
+    authorization:
+      type: Bearer
+      credentials: "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwcm9tZXRoZXVzIiwic3ViIjoibWluaW9hZG1pbiIsImV4cCI6NDkzMTA1OTQ4NH0.FVjEZ08Wq-_aUW7l5m-nN3VnAT1Jli6VpY5UApAeNJcAqQpp0SODdzKQKk-OGtMmcaTE3ZasBXANQhWqKlm4HA"
+    static_configs:
+      - targets:
+          - nginx:9000
