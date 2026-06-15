@@ -112,7 +112,7 @@ services:
       MINIO_ENDPOINT: nginx:9000        # talks to nginx, not a single node
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_BUCKET: ${APP_BUCKET}
     networks:
       - minio_net
     depends_on:
@@ -128,7 +128,7 @@ services:
       MINIO_ENDPOINT: nginx:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_BUCKET: ${APP_BUCKET}
     networks:
       - minio_net
     depends_on:
@@ -167,6 +167,52 @@ services:
       - prometheus
     restart: always
 
+  thumbnailer:
+    build: ./thumbnailer
+    ports:
+      - "5003:5003"
+    environment:
+      MINIO_ENDPOINT: nginx:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${APP_BUCKET}
+    networks:
+      - minio_net
+    depends_on:
+      - nginx
+    restart: always
+
+  metadata:
+    build: ./metadata
+    ports:
+      - "5004:5004"
+    environment:
+      MINIO_ENDPOINT: nginx:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${APP_BUCKET}
+    networks:
+      - minio_net
+    depends_on:
+      - nginx
+    restart: always
+
+  cluster-status:
+    build: ./cluster-status
+    ports:
+      - "5005:5005"
+    environment:
+      MINIO_ENDPOINT: nginx:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${APP_BUCKET}
+    networks:
+      - minio_net
+    depends_on:
+      - nginx
+    restart: always
+
+    
 # ── named volumes (persistent storage for each node) ──────────────────
 volumes:
   minio1_data:
