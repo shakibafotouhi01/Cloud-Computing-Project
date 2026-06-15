@@ -25,7 +25,6 @@ MINIO_NODES = [
     "http://minio4:9000",
 ]
 
-
 def probe_node(url):
     """Returns True if the node responds to its health endpoint."""
     try:
@@ -48,7 +47,7 @@ def cluster_status():
     node_statuses = []
     online_count = 0
     for node_url in MINIO_NODES:
-        name = node_url.split("//")[1].split(":")[0]   # e.g. "minio1"
+        name = node_url.split("//")[1].split(":")[0]
         alive = probe_node(node_url)
         if alive:
             online_count += 1
@@ -58,6 +57,43 @@ def cluster_status():
             "status": "online" if alive else "offline",
         })
 
+    # get storage stats — wrap everything in try/except
+    total_bytes  = 0
+    object_count = 0
+    bucket_exists = False
+    storage_error = None
+
+    try:
+        if client.bucket_exists(BUCKET):
+            bucket_exists = True
+            objects = list(client.list_objects(BUCKET))
+            object_count = len(objects)
+            total_bytes  = sum(o.size for o in objects if o.size)
+    except Exception as e:
+        # quorum lost — storage is unreachable, that is expected
+        storage_error = "storage unreachable — quorum lost"
+
+    quorum_ok = online_count >= 3
+
+    return jsonify({
+        "cluster": {
+            "nodes_total":   len(MINIO_NODES),
+            "nodes_online":  online_count,
+            "nodes_offline": len(MINIO_NODES) - online_count,
+            "quorum":        "ok" if quorum_ok else "LOST",
+            "ec_config":     "EC:2 (2 data + 2 parity)",
+            "can_tolerate":  max(0, online_count - 2),
+        },
+        "storage": {
+            "bucket":        BUCKET,
+            "bucket_exists": bucket_exists,
+            "objects":       object_count,
+            "used_bytes":    total_bytes,
+            "used_mb":       round(total_bytes / (1024 * 1024), 2),
+            "error":         storage_error,
+        },
+        "nodes": node_statuses,
+    })
     # get storage and object stats from the cluster
     total_bytes  = 0
     object_count = 0
